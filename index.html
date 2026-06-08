@@ -942,27 +942,30 @@
       document.getElementById('heroTotalSaved').textContent = fmt(s.totalSaved);
 
       // Stat cards
-      document.getElementById('statTotalSaved').textContent = fmt(s.totalSaved);
-      document.getElementById('statTotalDays').textContent = `${s.totalDays} days done`;
+      const safeSet = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+      
+      safeSet('statTotalSaved', fmt(s.totalSaved));
+      safeSet('statTotalDays', `${s.totalDays} days done`);
 
       const today = new Date();
       const currentMonth = today.getMonth();
-      document.getElementById('statMonthSaved').textContent = fmt(s.monthData[currentMonth].saved);
-      document.getElementById('statMonthName').textContent = MONTH_SHORT[currentMonth];
+      safeSet('statMonthSaved', fmt(s.monthData[currentMonth].saved));
+      safeSet('statMonthName', MONTH_SHORT[currentMonth]);
 
       const yearPct = pct(s.totalSaved, s.yearTarget);
-      document.getElementById('statProgress').textContent = yearPct + '%';
-      document.getElementById('statCompletedDays').textContent = `${s.totalDays} / ${s.totalPossibleDays} days`;
+      safeSet('statProgress', yearPct + '%');
+      safeSet('statCompletedDays', `${s.totalDays} / ${s.totalPossibleDays} days`);
 
-      document.getElementById('statYearTarget').textContent = fmt(s.yearTarget);
+      safeSet('statYearTarget', fmt(s.yearTarget));
 
       // Progress bar
-      document.getElementById('progressBarPct').textContent = yearPct + '%';
+      safeSet('progressBarPct', yearPct + '%');
       const pFill = document.getElementById('progressFill');
-      pFill.style.width = yearPct + '%';
-      document.getElementById('progressTrack').setAttribute('aria-valuenow', yearPct);
-      document.getElementById('progressSaved').textContent = fmt(s.totalSaved);
-      document.getElementById('progressRemaining').textContent = fmt(Math.max(0, s.yearTarget - s.totalSaved));
+      if (pFill) pFill.style.width = yearPct + '%';
+      const pTrack = document.getElementById('progressTrack');
+      if (pTrack) pTrack.setAttribute('aria-valuenow', yearPct);
+      safeSet('progressSaved', fmt(s.totalSaved));
+      safeSet('progressRemaining', fmt(Math.max(0, s.yearTarget - s.totalSaved)));
 
       // Quarterly rings
       const qIds = ['q1','q2','q3','q4'];
