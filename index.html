@@ -1384,15 +1384,15 @@
           </div>
           <div class="settings-value">₹20</div>
         </div>
-        <div class="settings-row" role="button" tabindex="0" aria-label="Increment amount">
+        <div class="settings-row" role="button" tabindex="0" aria-label="End amount">
           <div class="settings-row-left">
-            <div class="settings-icon" style="background:var(--accent-glow-2)" aria-hidden="true">➕</div>
+            <div class="settings-icon" style="background:var(--accent-glow-2)" aria-hidden="true">🎯</div>
             <div>
-              <div class="settings-label">Daily Increment</div>
-              <div class="settings-desc">Amount added each day</div>
+              <div class="settings-label">End of Month Target</div>
+              <div class="settings-desc">Amount on the last day</div>
             </div>
           </div>
-          <div class="settings-value">₹20</div>
+          <div class="settings-value">₹600</div>
         </div>
         <div class="settings-row" role="button" tabindex="0" aria-label="Bonus days">
           <div class="settings-row-left">
@@ -1524,22 +1524,26 @@
     // ═══════════════════════════════════════════════════════════
     // SAVING LOGIC
     // ═══════════════════════════════════════════════════════════
-    // Day number across the whole year (1-based)
-    function getDayNumber(monthIdx, dayOfMonth) {
-      let n = 0;
-      for (let m = 0; m < monthIdx; m++) n += daysInMonth(m);
-      return n + dayOfMonth;
-    }
-
     function getDailyAmount(monthIdx, dayOfMonth) {
-      const dayNum = getDayNumber(monthIdx, dayOfMonth);
-      const base = dayNum * BASE_INCREMENT_AMOUNT;
+      const days = daysInMonth(monthIdx);
+      const minAmount = 20;
+      const maxAmount = 600;
+
+      // Linear interpolation from day 1 to last day of the month
+      // Day 1 = 20, Last Day = 600
+      let amount;
+      if (days === 1) {
+          amount = maxAmount; // Edge case, shouldn't happen for valid months
+      } else {
+          amount = minAmount + ((maxAmount - minAmount) / (days - 1)) * (dayOfMonth - 1);
+      }
+
+      // Round to nearest integer (or nearest 10 if you prefer, going with integer here for smoother scale)
+      const base = Math.round(amount);
+
       const isBonus = BONUS_DAYS.includes(dayOfMonth);
       return isBonus ? base * BONUS_MULTIPLIER : base;
     }
-
-    // Actually we use: Day 1=₹20, Day2=₹40, ... i.e. dayNum*20
-    const BASE_INCREMENT_AMOUNT = 20;
 
     function getMonthTarget(monthIdx) {
       let total = 0;
