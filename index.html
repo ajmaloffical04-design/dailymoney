@@ -708,7 +708,7 @@
       localStorage.setItem('moneySyncCode', code);
       document.getElementById('authOverlay').classList.add('hidden-overlay');
       document.getElementById('userAvatar').textContent = code.slice(0, 2);
-      initApp();
+      init();
     }
 
     function loginWithCode() {
@@ -726,7 +726,7 @@
       document.getElementById('authOverlay').classList.add('hidden-overlay');
       document.getElementById('userAvatar').textContent = code.slice(0, 2);
       loadStateFromCloud().then(() => {
-        initApp();
+        init();
       });
     }
 
@@ -747,7 +747,7 @@
         currentSyncCode = saved;
         document.getElementById('authOverlay').classList.add('hidden-overlay');
         document.getElementById('userAvatar').textContent = saved.slice(0, 2);
-        loadStateFromCloud().then(() => initApp());
+        loadStateFromCloud().then(() => init());
       } else {
         showStep1();
       }
@@ -1560,6 +1560,9 @@
       currentMonth = new Date().getMonth();
 
       updateDashboard();
+      renderQuarterlyUI(); // New
+      renderProjectionChart(); // New
+      
       renderCalendar();
       renderYearly();
 
