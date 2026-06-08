@@ -262,6 +262,14 @@
 
     .chart-container { position: relative; width: 100%; height: 200px; }
 
+    /* Quarterly Bars */
+    .q-bar-row { margin-bottom: 16px; }
+    .q-bar-row:last-child { margin-bottom: 0; }
+    .q-bar-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: var(--text-main); }
+    .q-bar-bg { width: 100%; height: 10px; background: var(--bg-body); border-radius: 6px; overflow: hidden; }
+    .q-bar-fill { height: 100%; background: var(--bg-pill-light); border-radius: 6px; transition: width 0.8s var(--ease-spring); }
+    .q-val { color: var(--text-muted); font-size: 0.75rem; font-weight: 600; }
+
     /* ─── Bottom Navigation Pill ─── */
     .bottom-nav-wrap {
       position: fixed; bottom: 24px; left: 0; right: 0;
@@ -470,6 +478,26 @@
         </div>
       </div>
       
+      <!-- Quarterly Breakdown Card -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Quarterly Progress</div>
+          <div class="stat-badge badge-green" style="font-size:0.75rem;">2026 Breakdown</div>
+        </div>
+        <div id="quarterlyBarsContainer"></div>
+      </div>
+
+      <!-- 10-Year Projection Card -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">10-Year Wealth Projection</div>
+          <div class="stat-badge badge-green" style="font-size:0.75rem;" id="tenYearTotal">Compounding</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="projectionChart"></canvas>
+        </div>
+      </div>
+
       <!-- hidden original elements required by JS -->
       <div style="display:none;">
         <span id="heroTotalSaved"></span>
@@ -1571,6 +1599,104 @@ END:VCALENDAR`;
       
       showToast('Calendar reminder downloaded!');
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // QUARTERLY & PROJECTIONS
+    // ═══════════════════════════════════════════════════════════
+    function renderQuarterlyUI() {
+      const s = calcStats();
+      const container = document.getElementById('quarterlyBarsContainer');
+      if(!container) return;
+      
+      const qNames = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
+      let html = '';
+      
+      s.quarters.forEach((q, i) => {
+        const p = pct(q.saved, q.target);
+        html += `
+          <div class="q-bar-row">
+            <div class="q-bar-header">
+              <span>${qNames[i]}</span>
+              <span class="q-val">${fmt(q.saved)} <span style="font-size:0.65rem;font-weight:500;">/ ${fmt(q.target)}</span></span>
+            </div>
+            <div class="q-bar-bg">
+              <div class="q-bar-fill" style="width: ${p}%"></div>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    let projChartInstance = null;
+    function renderProjectionChart() {
+      const ctx = document.getElementById('projectionChart');
+      if (!ctx) return;
+      
+      const s = calcStats();
+      const annualTarget = s.yearTarget; // e.g., 113,150
+      
+      const labels = [];
+      const data = [];
+      let cumulative = 0;
+      
+      // 10 years projection starting from current YEAR
+      for(let i=0; i<10; i++) {
+        labels.push(YEAR + i);
+        cumulative += annualTarget;
+        data.push(cumulative);
+      }
+      
+      document.getElementById('tenYearTotal').textContent = `10 Yr Total: ${fmt(cumulative)}`;
+
+      if (projChartInstance) {
+        projChartInstance.destroy();
+      }
+
+      projChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Cumulative Savings',
+            data: data,
+            backgroundColor: 'rgba(82, 183, 104, 0.8)',
+            borderRadius: 4,
+            barThickness: 16
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return fmt(ctx.raw); }
+              }
+            }
+          },
+          scales: {
+            y: { 
+              display: false,
+              beginAtZero: true 
+            },
+            x: {
+              grid: { display: false },
+              border: { display: false },
+              ticks: { color: '#9CA3AF', font: {size: 10, family: "'Plus Jakarta Sans', sans-serif"} }
+            }
+          }
+        }
+      });
+    }
+
+    // Hook into toggleDay so it updates live when user ticks a day
+    const oldToggleDay = toggleDay;
+    toggleDay = function(monthIdx, day) {
+      oldToggleDay(monthIdx, day);
+      renderQuarterlyUI(); // Live update
+    };
 
   </script>
 </body>
