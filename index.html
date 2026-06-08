@@ -14,6 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <!-- jsPDF -->
@@ -22,6 +24,35 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
+    
+    /* ─── Auth Modal ─── */
+    .auth-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg-body); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .auth-card {
+      background: var(--bg-card); border-radius: 24px; padding: 32px 24px;
+      width: 100%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+    .auth-title { font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+    .auth-sub { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; }
+    .auth-input {
+      width: 100%; padding: 14px 16px; border-radius: 12px;
+      border: 1px solid #E5E7EB; background: var(--bg-body);
+      font-size: 0.9rem; font-family: inherit; margin-bottom: 12px;
+    }
+    .auth-btn {
+      width: 100%; padding: 14px; border-radius: 12px; border: none;
+      background: var(--bg-pill-light); color: #fff; font-weight: 700; font-size: 1rem;
+      cursor: pointer; margin-bottom: 12px; transition: background 0.2s;
+    }
+    .auth-btn:hover { background: var(--bg-pill-hover); }
+    .auth-toggle { background: none; border: none; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
+    .hidden-overlay { display: none !important; }
+
     /* ─── CSS Custom Properties ─── */
     :root {
       --font-primary: 'Plus Jakarta Sans', sans-serif;
@@ -317,11 +348,29 @@
     </div>
     <div class="topbar-right">
       <button class="bell-btn" onclick="exportPDF()" title="Export PDF">🔔</button>
-      <div class="avatar" onclick="showPage('settings')">👤</div>
+      <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Logout">👤</div>
     </div>
   </header>
 
+
+  <!-- Auth Overlay -->
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="asterisk-btn" style="margin: 0 auto 16px auto;">✱</div>
+      <h2 class="auth-title" id="authTitle">Welcome Back</h2>
+      <p class="auth-sub" id="authSub">Sign in to sync your savings.</p>
+      
+      <input type="email" id="authEmail" class="auth-input" placeholder="Email Address" required />
+      <input type="password" id="authPassword" class="auth-input" placeholder="Password" required />
+      
+      <button class="auth-btn" id="authSubmitBtn" onclick="handleAuth()">Log In</button>
+      <button class="auth-toggle" id="authToggleBtn" onclick="toggleAuthMode()">Need an account? Sign up</button>
+      <p id="authError" style="color: var(--badge-red-fg); font-size: 0.75rem; margin-top: 12px; display: none;"></p>
+    </div>
+  </div>
+
   <main>
+
     <!-- ── DASHBOARD ── -->
     <section class="page active" id="page-dashboard">
       <div class="dashboard-header">
@@ -558,6 +607,79 @@
       return total;
     }
 
+
+    // ═══════════════════════════════════════════════════════════
+    // SUPABASE SETUP & AUTH
+    // ═══════════════════════════════════════════════════════════
+    const SUPABASE_URL = 'https://ohrcowhkwolaugmgelpv.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_bJpuz2iuEmppFmapruloZg_FHKxN-gr'; // From user
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    let isSignUpMode = false;
+    let currentUser = null;
+
+    function toggleAuthMode() {
+      isSignUpMode = !isSignUpMode;
+      document.getElementById('authTitle').textContent = isSignUpMode ? 'Create Account' : 'Welcome Back';
+      document.getElementById('authSub').textContent = isSignUpMode ? 'Sign up to start syncing.' : 'Sign in to sync your savings.';
+      document.getElementById('authSubmitBtn').textContent = isSignUpMode ? 'Sign Up' : 'Log In';
+      document.getElementById('authToggleBtn').textContent = isSignUpMode ? 'Already have an account? Log in' : 'Need an account? Sign up';
+      document.getElementById('authError').style.display = 'none';
+    }
+
+    async function handleAuth() {
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const errorEl = document.getElementById('authError');
+      
+      if (!email || !password) {
+        errorEl.textContent = 'Please enter email and password.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      document.getElementById('authSubmitBtn').textContent = 'Loading...';
+      
+      try {
+        let error;
+        if (isSignUpMode) {
+          const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+          error = signUpError;
+        } else {
+          const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          error = signInError;
+        }
+
+        if (error) throw error;
+        
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+        document.getElementById('authSubmitBtn').textContent = isSignUpMode ? 'Sign Up' : 'Log In';
+      }
+    }
+    
+    async function handleLogout() {
+      if(confirm('Are you sure you want to log out?')) {
+        await supabase.auth.signOut();
+      }
+    }
+
+    // Auth state listener
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        currentUser = session.user;
+        document.getElementById('authOverlay').classList.add('hidden-overlay');
+        document.getElementById('userAvatar').textContent = currentUser.email.charAt(0).toUpperCase();
+        await loadStateFromCloud();
+        initApp(); // start rendering the app
+      } else {
+        currentUser = null;
+        document.getElementById('authOverlay').classList.remove('hidden-overlay');
+        document.getElementById('userAvatar').textContent = '👤';
+      }
+    });
+
     // ═══════════════════════════════════════════════════════════
     // STATE MANAGEMENT
     // ═══════════════════════════════════════════════════════════
@@ -566,19 +688,49 @@
       theme: 'dark'
     };
 
-    function loadState() {
+
+
+
+    async function loadStateFromCloud() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          state = { ...state, ...parsed };
+        // Try to load from cloud
+        const { data, error } = await supabase.from('user_data').select('*').eq('user_id', currentUser.id).single();
+        if (data && data.completed_days) {
+          state.completed = data.completed_days;
+        } else {
+          // If no cloud data, try local storage fallback
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            state = { ...state, ...parsed };
+            await saveState(); // push local to cloud
+          }
         }
-      } catch(e) {}
+      } catch(e) {
+        console.error("Error loading state:", e);
+      }
     }
 
-    function saveState() {
+    async function saveState() {
+      // Save locally as fallback
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+      
+      // Save to Supabase
+      if (currentUser) {
+        try {
+          const updates = {
+            user_id: currentUser.id,
+            completed_days: state.completed,
+            updated_at: new Date()
+          };
+          
+          await supabase.from('user_data').upsert(updates, { onConflict: 'user_id' });
+        } catch(e) {
+          console.error("Error saving to cloud:", e);
+        }
+      }
     }
+
 
     function isCompleted(monthIdx, day) {
       return !!state.completed[`${monthIdx}-${day}`];
