@@ -359,15 +359,14 @@
   <div id="authOverlay" class="auth-overlay">
     <div class="auth-card">
       <div class="asterisk-btn" style="margin: 0 auto 16px auto;">✱</div>
-      <h2 class="auth-title" id="authTitle">Welcome Back</h2>
-      <p class="auth-sub" id="authSub">Sign in to sync your savings.</p>
+      <h2 class="auth-title">Money Tick</h2>
+      <p class="auth-sub">Enter your email and password to continue.<br/>A new account will be created automatically if you don't have one.</p>
       
-      <input type="email" id="authEmail" class="auth-input" placeholder="Email Address" required />
-      <input type="password" id="authPassword" class="auth-input" placeholder="Password" required />
+      <input type="email" id="authEmail" class="auth-input" placeholder="Email Address" />
+      <input type="password" id="authPassword" class="auth-input" placeholder="Password (min 6 characters)" />
       
-      <button class="auth-btn" id="authSubmitBtn" onclick="handleAuth()">Log In</button>
-      <button class="auth-toggle" id="authToggleBtn" onclick="toggleAuthMode()">Need an account? Sign up</button>
-      <p id="authError" style="color: var(--badge-red-fg); font-size: 0.75rem; margin-top: 12px; display: none;"></p>
+      <button class="auth-btn" id="authSubmitBtn" onclick="handleAuth()">Continue →</button>
+      <p id="authError" style="background:#FEE2E2; color:#991B1B; font-size:0.8rem; font-weight:600; margin-top:12px; padding:10px 14px; border-radius:10px; display:none; text-align:left;"></p>
     </div>
   </div>
 
@@ -624,44 +623,56 @@
     let isSignUpMode = false;
     let currentUser = null;
 
-    function toggleAuthMode() {
-      isSignUpMode = !isSignUpMode;
-      document.getElementById('authTitle').textContent = isSignUpMode ? 'Create Account' : 'Welcome Back';
-      document.getElementById('authSub').textContent = isSignUpMode ? 'Sign up to start syncing.' : 'Sign in to sync your savings.';
-      document.getElementById('authSubmitBtn').textContent = isSignUpMode ? 'Sign Up' : 'Log In';
-      document.getElementById('authToggleBtn').textContent = isSignUpMode ? 'Already have an account? Log in' : 'Need an account? Sign up';
-      document.getElementById('authError').style.display = 'none';
-    }
+    function toggleAuthMode() {}
 
     async function handleAuth() {
-      const email = document.getElementById('authEmail').value;
+      const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPassword').value;
       const errorEl = document.getElementById('authError');
+      const btn = document.getElementById('authSubmitBtn');
       
+      errorEl.style.display = 'none';
+
       if (!email || !password) {
-        errorEl.textContent = 'Please enter email and password.';
+        errorEl.textContent = '⚠️ Please enter your email address and a password.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      if (password.length < 6) {
+        errorEl.textContent = '⚠️ Password must be at least 6 characters.';
         errorEl.style.display = 'block';
         return;
       }
       
-      document.getElementById('authSubmitBtn').textContent = 'Loading...';
+      btn.textContent = 'Please wait...';
+      btn.disabled = true;
       
       try {
-        let error;
-        if (isSignUpMode) {
-          const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
-          error = signUpError;
-        } else {
-          const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-          error = signInError;
+        // First try to sign in
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (!signInError) {
+          // Login succeeded — onAuthStateChange will handle the rest
+          return;
         }
 
-        if (error) throw error;
-        
+        // If login failed because no account, create one automatically
+        if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('invalid_credentials')) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+          if (signUpError) throw signUpError;
+          // onAuthStateChange will fire automatically after sign up
+          return;
+        }
+
+        // Other errors
+        throw signInError;
+
       } catch (err) {
-        errorEl.textContent = err.message;
+        errorEl.textContent = '⚠️ ' + err.message;
         errorEl.style.display = 'block';
-        document.getElementById('authSubmitBtn').textContent = isSignUpMode ? 'Sign Up' : 'Log In';
+        btn.textContent = 'Continue →';
+        btn.disabled = false;
       }
     }
     
