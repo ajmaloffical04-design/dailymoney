@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Money Tick Challenge — Daily Savings Tracker</title>
+  <meta name="description" content="Track your daily savings with the Money Tick Challenge. Mark completed days, view progress, and reach your financial goals." />
+  <meta name="theme-color" content="#10b981" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MoneyTick" />
+  <link rel="manifest" href="manifest.json" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    /* ─── CSS Custom Properties ─── */
+    :root {
+      --font-primary: 'Inter', sans-serif;
+      --font-display: 'Space Grotesk', sans-serif;
+
+      /* Emerald palette */
+      --emerald-50:  #ecfdf5;
+      --emerald-100: #d1fae5;
+      --emerald-200: #a7f3d0;
+      --emerald-300: #6ee7b7;
+      --emerald-400: #34d399;
+      --emerald-500: #10b981;
+      --emerald-600: #059669;
+      --emerald-700: #047857;
+      --emerald-800: #065f46;
+      --emerald-900: #064e3b;
+
+      /* Animation */
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+      --duration-fast: 150ms;
+      --duration-normal: 250ms;
+      --duration-slow: 400ms;
+    }
+
+    /* ─── Dark Theme ─── */
+    [data-theme="dark"] {
+      --bg-primary:    #080e1a;
+      --bg-secondary:  #0d1526;
+      --bg-card:       #111c33;
+      --bg-card-hover: #162240;
+      --bg-glass:      rgba(17, 28, 51, 0.7);
+      --bg-glass-2:    rgba(13, 21, 38, 0.85);
+      --border:        rgba(16, 185, 129, 0.12);
+      --border-strong: rgba(16, 185, 129, 0.25);
+      --text-primary:  #f0fdf9;
+      --text-secondary:#94a3b8;
+      --text-muted:    #64748b;
+      --accent:        #10b981;
+      --accent-glow:   rgba(16, 185, 129, 0.2);
+      --accent-glow-2: rgba(16, 185, 129, 0.08);
+      --gold:          #f59e0b;
+      --gold-glow:     rgba(245, 158, 11, 0.2);
+      --danger:        #ef4444;
+      --danger-glow:   rgba(239, 68, 68, 0.15);
+      --shadow-card:   0 4px 24px rgba(0, 0, 0, 0.4);
+      --shadow-glow:   0 0 30px rgba(16, 185, 129, 0.15);
+      --gradient-hero: linear-gradient(135deg, #0d1526 0%, #080e1a 50%, #040c18 100%);
+      --gradient-accent: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --gradient-gold: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      --scrollbar-bg:  #0d1526;
+      --scrollbar-thumb: #1e3a5f;
+    }
+
+    /* ─── Light Theme ─── */
+    [data-theme="light"] {
+      --bg-primary:    #f8fffe;
+      --bg-secondary:  #f0fdf9;
+      --bg-card:       #ffffff;
+      --bg-card-hover: #f8fffe;
+      --bg-glass:      rgba(255, 255, 255, 0.85);
+      --bg-glass-2:    rgba(240, 253, 249, 0.9);
+      --border:        rgba(16, 185, 129, 0.15);
+      --border-strong: rgba(16, 185, 129, 0.3);
+      --text-primary:  #0f172a;
+      --text-secondary:#475569;
+      --text-muted:    #94a3b8;
+      --accent:        #059669;
+      --accent-glow:   rgba(5, 150, 105, 0.12);
+      --accent-glow-2: rgba(5, 150, 105, 0.06);
+      --gold:          #d97706;
+      --gold-glow:     rgba(217, 119, 6, 0.15);
+      --danger:        #dc2626;
+      --danger-glow:   rgba(220, 38, 38, 0.1);
+      --shadow-card:   0 4px 24px rgba(0, 0, 0, 0.07);
+      --shadow-glow:   0 0 30px rgba(16, 185, 129, 0.1);
+      --gradient-hero: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 50%, #dcfce7 100%);
+      --gradient-accent: linear-gradient(135deg, #059669 0%, #047857 100%);
+      --gradient-gold: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      --scrollbar-bg:  #f0fdf9;
+      --scrollbar-thumb: #a7f3d0;
+    }
+
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: var(--font-primary);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      transition: background var(--duration-slow) var(--ease-smooth),
+                  color var(--duration-slow) var(--ease-smooth);
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+
+    /* ─── Background Orbs ─── */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.07;
+      animation: orbFloat 20s ease-in-out infinite;
+    }
+    .bg-orb-1 { width: 600px; height: 600px; background: var(--accent); top: -100px; left: -100px; animation-delay: 0s; }
+    .bg-orb-2 { width: 400px; height: 400px; background: #6366f1; bottom: -100px; right: -100px; animation-delay: -7s; }
+    .bg-orb-3 { width: 300px; height: 300px; background: var(--gold); top: 40%; right: 20%; animation-delay: -14s; }
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -20px) scale(1.05); }
+      66% { transform: translate(-20px, 30px) scale(0.95); }
+    }
+
+    /* ─── Layout ─── */
+    .app-container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 16px 100px;
+    }
+
+    /* ─── Top Navigation Bar ─── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: var(--bg-glass-2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+    }
+    .topbar-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 12px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--gradient-accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+    .logo-text span { color: var(--accent); }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      font-size: 16px;
+    }
+    .icon-btn:hover {
+      background: var(--accent-glow-2);
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .install-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--gradient-accent);
+      border: none;
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      white-space: nowrap;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+    .install-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+    .install-btn.hidden { display: none; }
+
+    /* ─── Bottom Nav (Mobile) ─── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: var(--bg-glass-2);
+      border-top: 1px solid var(--border);
+      padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+      display: flex;
+      justify-content: space-around;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      font-weight: 500;
+      font-family: var(--font-primary);
+    }
+    .nav-item svg { font-size: 20px; width: 22px; height: 22px; }
+    .nav-item.active {
+      color: var(--accent);
+      background: var(--accent-glow-2);
+    }
+    .nav-item:hover { color: var(--accent); }
+
+    /* ─── Pages ─── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ─── Section Headers ─── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-top: 24px;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .section-title span { color: var(--accent); }
+    .section-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-glow-2);
+      border: 1px solid var(--border-strong);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ─── Glass Card ─── */
+    .glass-card {
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      transition: all var(--duration-normal) var(--ease-smooth);
+    }
+    .glass-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-glow);
+    }
+
+    /* ─── Hero Balance Card ─── */
+    .hero-card {
+      background: linear-gradient(135deg, #0a2942 0%, #0d1f35 40%, #081828 100%);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 24px;
+      padding: 28px 24px;
+      margin: 20px 0;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    [data-theme="light"] .hero-card {
+      background: linear-gradient(135deg, #064e3b 0%, #047857 40%, #059669 100%);
+    }
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero-card::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: -40px;
+      width: 150px; height: 150px;
+      background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 12px;
+    }
+    .hero-chip-dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.8); }
+    }
+    .hero-label { font-size: 0.8rem; color: rgba(255,255,255,0.55); margin-bottom: 4px; }
+    .hero-amount {
+      font-family: var(--font-display);
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: white;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 20px rgba(16,185,129,0.3);
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .hero-action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 500;
+      font-family: var(--font-primary);
+      min-width: 64px;
+    }
+    .hero-action-btn:hover {
+      background: rgba(255,255,255,0.18);
+      transform: translateY(-2px);
+    }
+    .hero-action-icon {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* ─── Stat Grid ─── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 0;
+    }
+    @media (min-width: 640px) {
+      .stat-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      cursor: default;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gradient-accent);
+      border-radius: 18px 18px 0 0;
+      opacity: 0;
+      transition: opacity var(--duration-normal);
+    }
+    .stat-card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-card); }
+    .stat-card:hover::before { opacity: 1; }
+    .stat-card.gold::before { background: var(--gradient-gold); }
+
+    .stat-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .stat-icon.emerald { background: var(--accent-glow-2); }
+    .stat-icon.gold-bg { background: var(--gold-glow); }
+    .stat-icon.purple-bg { background: rgba(99,102,241,0.1); }
+    .stat-icon.blue-bg { background: rgba(59,130,246,0.1); }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+    .stat-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      margin-top: 6px;
+      padding: 2px 7px;
+      border-radius: 20px;
+    }
+    .stat-change.up { color: var(--accent); background: var(--accent-glow-2); }
+    .stat-change.neutral { color: var(--text-muted); background: var(--accent-glow-2); }
+
+    /* ─── Progress Ring ─── */
+    .progress-ring-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .progress-ring { transform: rotate(-90deg); }
+    .progress-ring-bg { fill: none; stroke: var(--border); stroke-width: 6; }
+    .progress-ring-fill {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.8s var(--ease-smooth);
+    }
+    .progress-ring-fill.gold { stroke: var(--gold); }
+    .ring-text {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .ring-pct {
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .ring-sub { font-size: 0.55rem; color: var(--text-muted); font-weight: 500; }
+
+    /* ─── Quarter Cards ─── */
+    .quarter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (min-width: 768px) {
+      .quarter-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .quarter-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px 14px;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .quarter-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+    .quarter-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .quarter-amount {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .quarter-months { font-size: 0.65rem; color: var(--text-muted); }
+
+    /* ─── Month Selector ─── */
+    .month-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .month-tabs::-webkit-scrollbar { display: none; }
+    .month-tab {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      white-space: nowrap;
+    }
+    .month-tab:hover { border-color: var(--border-strong); color: var(--accent); }
+    .month-tab.active {
+      background: var(--gradient-accent);
+      border-color: transparent;
+      color: white;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    /* ─── Month Info Bar ─── */
+    .month-info-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 12px 0;
+    }
+    .month-info-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .month-info-pill .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .month-info-pill .dot.gold { background: var(--gold); }
+    .month-info-pill .dot.muted { background: var(--text-muted); }
+    .month-info-pill strong { color: var(--text-primary); }
+
+    /* ─── Calendar Grid ─── */
+    .calendar-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: var(--accent-glow-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-weekday {
+      text-align: center;
+      padding: 10px 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--border);
+    }
+    .cal-empty {
+      background: var(--bg-card);
+      min-height: 70px;
+    }
+    @media (min-width: 480px) { .cal-empty { min-height: 80px; } }
+
+    .day-card {
+      background: var(--bg-card);
+      min-height: 70px;
+      padding: 6px;
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      position: relative;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (min-width: 480px) { .day-card { min-height: 80px; padding: 8px; } }
+
+    .day-card:hover {
+      background: var(--bg-card-hover);
+      z-index: 2;
+      transform: scale(1.04);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .day-card.today { background: var(--accent-glow-2); }
+    .day-card.today .day-num { color: var(--accent); }
+    .day-card.completed {
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .day-card.bonus {
+      background: rgba(245, 158, 11, 0.06);
+    }
+    .day-card.bonus.completed {
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .day-num {
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .day-amount {
+      font-size: 0.58rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+    .day-amount.bonus-amt { color: var(--gold); }
+
+    .day-tick {
+      position: absolute;
+      top: 3px; right: 3px;
+      width: 18px; height: 18px;
+      background: var(--gradient-accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+      animation: tickPop var(--duration-slow) var(--ease-spring);
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+    @keyframes tickPop {
+      0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .bonus-badge {
+      position: absolute;
+      bottom: 2px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.5rem;
+      font-weight: 700;
+      color: var(--gold);
+      background: var(--gold-glow);
+      border-radius: 4px;
+      padding: 1px 4px;
+      white-space: nowrap;
+    }
+
+    /* ─── Progress Bar ─── */
+    .progress-bar-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin-top: 12px;
+    }
+    .progress-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .progress-bar-title { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
+    .progress-bar-pct {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .progress-track {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--gradient-accent);
+      border-radius: 4px;
+      transition: width 0.8s var(--ease-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: -100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+      animation: shimmer 2s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    .progress-details {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .progress-detail-item { font-size: 0.7rem; color: var(--text-muted); }
+    .progress-detail-item strong { color: var(--text-secondary); }
+
+    /* ─── Charts ─── */
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .chart-title { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+    .chart-subtitle { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .chart-total {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-align: right;
+    }
+    .chart-total-label { font-size: 0.65rem; color: var(--text-muted); text-align: right; }
+    .chart-container { position: relative; width: 100%; }
+    .chart-container canvas { max-height: 220px; }
+
+    /* ─── Streak Banner ─── */
+    .streak-banner {
+      background: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(251,191,36,0.06) 100%);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .streak-icon { font-size: 28px; flex-shrink: 0; }
+    .streak-content {}
+    .streak-title { font-size: 0.85rem; font-weight: 700; color: var(--gold); }
+    .streak-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ─── Export Buttons ─── */
+    .export-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .export-btn {
+      flex: 1;
+      min-width: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      font-family: var(--font-primary);
+    }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow-2); transform: translateY(-1px); }
+    .export-btn.pdf:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-glow); }
+
+    /* ─── Year Summary ─── */
+    .year-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    @media (min-width: 640px) {
+      .year-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .year-month-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+      transition: all var(--duration-normal) var(--ease-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+    .year-month-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+    .year-month-card.has-savings { border-color: rgba(16,185,129,0.25); }
+    .year-month-name { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+    .year-month-amount { font-family: var(--font-display); font-size: 0.88rem; font-weight: 800; color: var(--text-primary); }
+    .year-month-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .year-month-fill {
+      height: 100%;
+      background: var(--gradient-accent);
+      border-radius: 2px;
+      transition: width 0.8s var(--ease-smooth);
+    }
+    .year-month-days { font-size: 0.6rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ─── Settings Page ─── */
+    .settings-group {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .settings-group-title {
+      padding: 14px 18px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--duration-fast);
+      cursor: pointer;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row:hover { background: var(--accent-glow-2); }
+    .settings-row-left { display: flex; align-items: center; gap: 12px; }
+    .settings-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .settings-label { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
+    .settings-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .settings-value { font-size: 0.8rem; color: var(--text-muted); }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      width: 44px; height: 24px;
+      background: var(--border);
+      border-radius: 12px;
+      position: relative;
+      transition: background var(--duration-normal);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .toggle-switch.on { background: var(--accent); }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: transform var(--duration-normal) var(--ease-spring);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .toggle-switch.on::after { transform: translateX(20px); }
+
+    /* ─── Toast Notification ─── */
+    .toast-wrap {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 10px 18px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: toastIn 0.3s var(--ease-spring), toastOut 0.3s var(--ease-smooth) 2.7s forwards;
+      white-space: nowrap;
+    }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-8px); } }
+
+    /* ─── Animations ─── */
+    .fade-in { animation: fadeIn 0.4s var(--ease-smooth) both; }
+    .slide-up { animation: slideUp 0.4s var(--ease-spring) both; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── Responsive Tweaks ─── */
+    @media (max-width: 360px) {
+      .hero-amount { font-size: 2rem; }
+      .stat-value { font-size: 1.2rem; }
+      .day-num { font-size: 0.8rem; }
+      .day-amount { font-size: 0.52rem; }
+    }
+    @media (min-width: 768px) {
+      .app-container { padding: 0 24px 100px; }
+      .hero-amount { font-size: 3rem; }
+    }
+
+    /* ─── Year End Banner ─── */
+    .year-end-banner {
+      background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.06) 100%);
+      border: 1px solid var(--border-strong);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .year-end-emoji { font-size: 40px; margin-bottom: 8px; }
+    .year-end-title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--text-primary); }
+    .year-end-amount { font-family: var(--font-display); font-size: 2rem; font-weight: 900; color: var(--accent); margin: 6px 0; }
+    .year-end-sub { font-size: 0.8rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <!-- Background orbs -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+  </div>
+
+  <!-- Top Bar -->
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a href="#" class="logo" aria-label="Money Tick Challenge Home">
+        <div class="logo-icon" aria-hidden="true">💰</div>
+        <span class="logo-text">Money<span>Tick</span></span>
+      </a>
+      <div class="topbar-actions">
+        <button class="install-btn hidden" id="installBtn" aria-label="Install app">
+          <span>⬇</span> Install
+        </button>
+        <button class="icon-btn" id="themeToggleBtn" aria-label="Toggle dark/light mode" title="Toggle theme">
+          <span id="themeIcon">☀️</span>
+        </button>
+        <button class="icon-btn" onclick="exportPDF()" aria-label="Export PDF" title="Export PDF">📄</button>
+        <button class="icon-btn" onclick="exportExcel()" aria-label="Export Excel" title="Export Excel">📊</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="app-container" role="main">
+
+    <!-- ── DASHBOARD PAGE ── -->
+    <section class="page active" id="page-dashboard" aria-label="Dashboard">
+
+      <!-- Hero Balance -->
+      <div class="hero-card fade-in" role="region" aria-label="Total savings balance">
+        <div class="hero-chip">
+          <span class="hero-chip-dot" aria-hidden="true"></span>
+          <span>2026 Money Tick Challenge</span>
+        </div>
+        <div class="hero-label">Total Saved This Year</div>
+        <div class="hero-amount" id="heroTotalSaved" aria-live="polite">₹0</div>
+        <div class="hero-actions">
+          <button class="hero-action-btn" onclick="showPage('calendar')" aria-label="View calendar">
+            <div class="hero-action-icon" aria-hidden="true">📅</div>
+            Calendar
+          </button>
+          <button class="hero-action-btn" onclick="showPage('stats')" aria-label="View statistics">
+            <div class="hero-action-icon" aria-hidden="true">📈</div>
+            Stats
+          </button>
+          <button class="hero-action-btn" onclick="showPage('yearly')" aria-label="View yearly summary">
+            <div class="hero-action-icon" aria-hidden="true">🏆</div>
+            Yearly
+          </button>
+          <button class="hero-action-btn" onclick="exportPDF()" aria-label="Export report">
+            <div class="hero-action-icon" aria-hidden="true">📤</div>
+            Export
+          </button>
+        </div>
+      </div>
+
+      <!-- Streak Banner -->
+      <div class="streak-banner slide-up" id="streakBanner" role="alert" aria-live="polite">
+        <div class="streak-icon" aria-hidden="true">🔥</div>
+        <div class="streak-content">
+          <div class="streak-title" id="streakTitle">Keep Going!</div>
+          <div class="streak-sub" id="streakSub">Mark today's saving to build your streak</div>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="section-header">
+        <h2 class="section-title">Overview <span>Stats</span></h2>
+        <span class="section-badge" aria-label="Year 2026">2026</span>
+      </div>
+      <div class="stat-grid slide-up" role="list" aria-label="Savings statistics">
+        <div class="stat-card" role="listitem" aria-label="Total saved">
+          <div class="stat-icon emerald" aria-hidden="true">💰</div>
+          <div class="stat-value" id="statTotalSaved">₹0</div>
+          <div class="stat-label">Total Saved</div>
+          <div class="stat-change up" id="statTotalDays">0 days done</div>
+        </div>
+        <div class="stat-card" role="listitem" aria-label="This month savings">
+          <div class="stat-icon blue-bg" aria-hidden="true">📅</div>
+          <div class="stat-value" id="statMonthSaved">₹0</div>
+          <div class="stat-label">This Month</div>
+          <div class="stat-change neutral" id="statMonthName">—</div>
+        </div>
+        <div class="stat-card" role="listitem" aria-label="Progress percentage">
+          <div class="stat-icon purple-bg" aria-hidden="true">🎯</div>
+          <div class="stat-value" id="statProgress">0%</div>
+          <div class="stat-label">Year Progress</div>
+          <div class="stat-change up" id="statCompletedDays">0 / 365 days</div>
+        </div>
+        <div class="stat-card gold" role="listitem" aria-label="Year end target">
+          <div class="stat-icon gold-bg" aria-hidden="true">🏆</div>
+          <div class="stat-value" id="statYearTarget">₹0</div>
+          <div class="stat-label">Year Target</div>
+          <div class="stat-change neutral">Full year</div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-bar-wrap slide-up" role="region" aria-label="Annual savings progress">
+        <div class="progress-bar-header">
+          <span class="progress-bar-title">Annual Savings Progress</span>
+          <span class="progress-bar-pct" id="progressBarPct" aria-live="polite">0%</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressTrack">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div class="progress-details">
+          <span class="progress-detail-item">Saved: <strong id="progressSaved">₹0</strong></span>
+          <span class="progress-detail-item">Remaining: <strong id="progressRemaining">₹0</strong></span>
+        </div>
+      </div>
+
+      <!-- Quarterly Summary -->
+      <div class="section-header">
+        <h2 class="section-title">Quarterly <span>Summary</span></h2>
+      </div>
+      <div class="quarter-grid slide-up" role="list" aria-label="Quarterly savings">
+        <div class="quarter-card" role="listitem">
+          <div class="progress-ring-wrap">
+            <svg class="progress-ring" width="72" height="72" aria-hidden="true">
+              <circle class="progress-ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="progress-ring-fill" id="q1Ring" cx="36" cy="36" r="28" style="stroke-dasharray:175.9; stroke-dashoffset:175.9"/>
+            </svg>
+            <div class="ring-text">
+              <div class="ring-pct" id="q1Pct">0%</div>
+              <div class="ring-sub">done</div>
+            </div>
+          </div>
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-amount" id="q1Amount">₹0</div>
+          <div class="quarter-months">Jan · Feb · Mar</div>
+        </div>
+        <div class="quarter-card" role="listitem">
+          <div class="progress-ring-wrap">
+            <svg class="progress-ring" width="72" height="72" aria-hidden="true">
+              <circle class="progress-ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="progress-ring-fill" id="q2Ring" cx="36" cy="36" r="28" style="stroke-dasharray:175.9; stroke-dashoffset:175.9"/>
+            </svg>
+            <div class="ring-text">
+              <div class="ring-pct" id="q2Pct">0%</div>
+              <div class="ring-sub">done</div>
+            </div>
+          </div>
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-amount" id="q2Amount">₹0</div>
+          <div class="quarter-months">Apr · May · Jun</div>
+        </div>
+        <div class="quarter-card" role="listitem">
+          <div class="progress-ring-wrap">
+            <svg class="progress-ring" width="72" height="72" aria-hidden="true">
+              <circle class="progress-ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="progress-ring-fill" id="q3Ring" cx="36" cy="36" r="28" style="stroke-dasharray:175.9; stroke-dashoffset:175.9"/>
+            </svg>
+            <div class="ring-text">
+              <div class="ring-pct" id="q3Pct">0%</div>
+              <div class="ring-sub">done</div>
+            </div>
+          </div>
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-amount" id="q3Amount">₹0</div>
+          <div class="quarter-months">Jul · Aug · Sep</div>
+        </div>
+        <div class="quarter-card" role="listitem">
+          <div class="progress-ring-wrap">
+            <svg class="progress-ring" width="72" height="72" aria-hidden="true">
+              <circle class="progress-ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="progress-ring-fill" id="q4Ring" cx="36" cy="36" r="28" style="stroke-dasharray:175.9; stroke-dashoffset:175.9"/>
+            </svg>
+            <div class="ring-text">
+              <div class="ring-pct" id="q4Pct">0%</div>
+              <div class="ring-sub">done</div>
+            </div>
+          </div>
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-amount" id="q4Amount">₹0</div>
+          <div class="quarter-months">Oct · Nov · Dec</div>
+        </div>
+      </div>
+
+      <!-- Export Row -->
+      <div class="section-header">
+        <h2 class="section-title">Export <span>Reports</span></h2>
+      </div>
+      <div class="export-row slide-up">
+        <button class="export-btn pdf" onclick="exportPDF()" aria-label="Export PDF report">📄 Export PDF</button>
+        <button class="export-btn" onclick="exportExcel()" aria-label="Export Excel report">📊 Export Excel</button>
+      </div>
+
+    </section>
+
+    <!-- ── CALENDAR PAGE ── -->
+    <section class="page" id="page-calendar" aria-label="Monthly calendar">
+      <div class="section-header">
+        <h1 class="section-title">Savings <span>Calendar</span></h1>
+      </div>
+
+      <!-- Month Tabs -->
+      <nav class="month-tabs" role="tablist" aria-label="Month selector" id="monthTabs"></nav>
+
+      <!-- Month Info Bar -->
+      <div class="month-info-bar" id="monthInfoBar" role="region" aria-label="Month summary"></div>
+
+      <!-- Calendar Grid -->
+      <div class="calendar-wrap" role="grid" aria-label="Daily savings calendar">
+        <div class="cal-weekdays" role="row">
+          <div class="cal-weekday" role="columnheader" aria-label="Sunday">Sun</div>
+          <div class="cal-weekday" role="columnheader" aria-label="Monday">Mon</div>
+          <div class="cal-weekday" role="columnheader" aria-label="Tuesday">Tue</div>
+          <div class="cal-weekday" role="columnheader" aria-label="Wednesday">Wed</div>
+          <div class="cal-weekday" role="columnheader" aria-label="Thursday">Thu</div>
+          <div class="cal-weekday" role="columnheader" aria-label="Friday">Fri</div>
+          <div class="cal-weekday" role="columnheader" aria-label="Saturday">Sat</div>
+        </div>
+        <div class="cal-grid" id="calGrid" role="rowgroup"></div>
+      </div>
+
+      <!-- Month Progress -->
+      <div class="progress-bar-wrap slide-up" role="region" aria-label="Month savings progress">
+        <div class="progress-bar-header">
+          <span class="progress-bar-title" id="monthProgressTitle">Month Progress</span>
+          <span class="progress-bar-pct" id="monthProgressPct" aria-live="polite">0%</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-fill" id="monthProgressFill" style="width:0%"></div>
+        </div>
+        <div class="progress-details">
+          <span class="progress-detail-item">Saved: <strong id="monthProgressSaved">₹0</strong></span>
+          <span class="progress-detail-item">Target: <strong id="monthProgressTarget">₹0</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── STATS PAGE ── -->
+    <section class="page" id="page-stats" aria-label="Statistics and charts">
+      <div class="section-header">
+        <h1 class="section-title">Savings <span>Analytics</span></h1>
+        <span class="section-badge">2026</span>
+      </div>
+
+      <!-- Monthly Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Monthly Savings</div>
+            <div class="chart-subtitle">Average per month</div>
+          </div>
+          <div>
+            <div class="chart-total" id="chartMonthTotal">₹0</div>
+            <div class="chart-total-label">total saved</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="monthlyChart" aria-label="Monthly savings bar chart" role="img"></canvas>
+        </div>
+      </div>
+
+      <!-- Quarterly Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Quarterly Breakdown</div>
+            <div class="chart-subtitle">Q1 – Q4 comparison</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="quarterlyChart" aria-label="Quarterly savings chart" role="img"></canvas>
+        </div>
+      </div>
+
+      <!-- Annual Progress Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Annual Cumulative</div>
+            <div class="chart-subtitle">Running total through the year</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="annualChart" aria-label="Annual cumulative savings chart" role="img"></canvas>
+        </div>
+      </div>
+
+      <!-- Completion stats -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Completion Rate</div>
+            <div class="chart-subtitle">Days completed vs total days</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="completionChart" aria-label="Completion rate donut chart" role="img"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── YEARLY PAGE ── -->
+    <section class="page" id="page-yearly" aria-label="Yearly summary">
+      <div class="section-header">
+        <h1 class="section-title">Year <span>Overview</span></h1>
+        <span class="section-badge" id="yearBadge">2026</span>
+      </div>
+
+      <!-- Year End Banner -->
+      <div class="year-end-banner" role="region" aria-label="Year end projection">
+        <div class="year-end-emoji" aria-hidden="true">🏆</div>
+        <div class="year-end-title">Year-End Target</div>
+        <div class="year-end-amount" id="yearEndAmount">₹0</div>
+        <div class="year-end-sub" id="yearEndSub">Complete all 365 days to reach your goal</div>
+      </div>
+
+      <!-- Monthly breakdown grid -->
+      <div class="year-grid" id="yearGrid" role="list" aria-label="Monthly savings breakdown"></div>
+    </section>
+
+    <!-- ── SETTINGS PAGE ── -->
+    <section class="page" id="page-settings" aria-label="Settings">
+      <div class="section-header">
+        <h1 class="section-title">App <span>Settings</span></h1>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Appearance</div>
+        <div class="settings-row" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Toggle dark mode">
+          <div class="settings-row-left">
+            <div class="settings-icon" style="background:rgba(99,102,241,0.1)" aria-hidden="true">🌙</div>
+            <div>
+              <div class="settings-label">Dark Mode</div>
+              <div class="settings-desc">Switch between dark and light theme</div>
+            </div>
+          </div>
+          <div class="toggle-switch" id="darkModeToggle" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Saving Rules</div>
+        <div class="settings-row" role="button" tabindex="0" aria-label="Base saving amount">
+          <div class="settings-row-left">
+            <div class="settings-icon" style="background:var(--accent-glow-2)" aria-hidden="true">💵</div>
+            <div>
+              <div class="settings-label">Base Daily Amount</div>
+              <div class="settings-desc">Starting amount on Day 1</div>
+            </div>
+          </div>
+          <div class="settings-value">₹20</div>
+        </div>
+        <div class="settings-row" role="button" tabindex="0" aria-label="Increment amount">
+          <div class="settings-row-left">
+            <div class="settings-icon" style="background:var(--accent-glow-2)" aria-hidden="true">➕</div>
+            <div>
+              <div class="settings-label">Daily Increment</div>
+              <div class="settings-desc">Amount added each day</div>
+            </div>
+          </div>
+          <div class="settings-value">₹20</div>
+        </div>
+        <div class="settings-row" role="button" tabindex="0" aria-label="Bonus days">
+          <div class="settings-row-left">
+            <div class="settings-icon" style="background:var(--gold-glow)" aria-hidden="true">🔥</div>
+            <div>
+              <div class="settings-label">Bonus Days</div>
+              <div class="settings-desc">3x multiplier on days 7, 15, 25</div>
+            </div>
+          </div>
+          <div class="settings-value">3×</div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Data</div>
+        <div class="settings-row" onclick="exportPDF()" role="button" tabindex="0" aria-label="Export PDF">
+          <div class="settings-row-left">
+            <div class="settings-icon" style="background:var(--danger-glow)" aria-hidden="true">📄</div>
+            <div>
+              <div class="settings-label">Export PDF Report</div>
+              <div class="settings-desc">Download your savings report as PDF</div>
+            </div>
+          </div>
+          <div class="settings-value">›</div>
+        </div>
+        <div class="settings-row" onclick="exportExcel()" role="button" tabindex="0" aria-label="Export Excel">
+          <div class="settings-row-left">
+            <div class="settings-icon" style="background:var(--accent-glow-2)" aria-hidden="true">📊</div>
+            <div>
+              <div class="settings-label">Export Excel</div>
+              <div class="settings-desc">Download your savings data as Excel</div>
+            </div>
+          </div>
+          <div class="settings-value">›</div>
+        </div>
+        <div class="settings-row" onclick="resetAllData()" role="button" tabindex="0" aria-label="Reset data">
+          <div class="settings-row-left">
+            <div class="settings-icon" style="background:var(--danger-glow)" aria-hidden="true">🗑️</div>
+            <div>
+              <div class="settings-label">Reset All Data</div>
+              <div class="settings-desc">Clear all saved progress</div>
+            </div>
+          </div>
+          <div class="settings-value" style="color:var(--danger)">›</div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">About</div>
+        <div class="settings-row" role="button" tabindex="0">
+          <div class="settings-row-left">
+            <div class="settings-icon" style="background:var(--accent-glow-2)" aria-hidden="true">💡</div>
+            <div>
+              <div class="settings-label">Money Tick Challenge</div>
+              <div class="settings-desc">Version 1.0.0 · Premium Fintech Tracker</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+    <button class="nav-item active" id="navDashboard" onclick="showPage('dashboard')" aria-label="Dashboard" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      Dashboard
+    </button>
+    <button class="nav-item" id="navCalendar" onclick="showPage('calendar')" aria-label="Calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Calendar
+    </button>
+    <button class="nav-item" id="navStats" onclick="showPage('stats')" aria-label="Statistics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Stats
+    </button>
+    <button class="nav-item" id="navYearly" onclick="showPage('yearly')" aria-label="Yearly summary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Yearly
+    </button>
+    <button class="nav-item" id="navSettings" onclick="showPage('settings')" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+      Settings
+    </button>
+  </nav>
+
+  <!-- Toast Container -->
+  <div class="toast-wrap" id="toastWrap" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    // CONSTANTS & CONFIG
+    // ═══════════════════════════════════════════════════════════
+    const YEAR = 2026;
+    const BASE_AMOUNT = 20;
+    const INCREMENT = 20;
+    const BONUS_DAYS = [7, 15, 25]; // day-of-month that get 3x
+    const BONUS_MULTIPLIER = 3;
+    const STORAGE_KEY = 'moneyTickChallenge_v1';
+
+    const MONTHS = [
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December'
+    ];
+    const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    // Days per month for 2026 (2026 is not a leap year)
+    function daysInMonth(m) {
+      return new Date(YEAR, m + 1, 0).getDate();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // SAVING LOGIC
+    // ═══════════════════════════════════════════════════════════
+    // Day number across the whole year (1-based)
+    function getDayNumber(monthIdx, dayOfMonth) {
+      let n = 0;
+      for (let m = 0; m < monthIdx; m++) n += daysInMonth(m);
+      return n + dayOfMonth;
+    }
+
+    function getDailyAmount(monthIdx, dayOfMonth) {
+      const dayNum = getDayNumber(monthIdx, dayOfMonth);
+      const base = dayNum * BASE_INCREMENT_AMOUNT;
+      const isBonus = BONUS_DAYS.includes(dayOfMonth);
+      return isBonus ? base * BONUS_MULTIPLIER : base;
+    }
+
+    // Actually we use: Day 1=₹20, Day2=₹40, ... i.e. dayNum*20
+    const BASE_INCREMENT_AMOUNT = 20;
+
+    function getMonthTarget(monthIdx) {
+      let total = 0;
+      const days = daysInMonth(monthIdx);
+      for (let d = 1; d <= days; d++) total += getDailyAmount(monthIdx, d);
+      return total;
+    }
+
+    function getYearTarget() {
+      let total = 0;
+      for (let m = 0; m < 12; m++) total += getMonthTarget(m);
+      return total;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STATE MANAGEMENT
+    // ═══════════════════════════════════════════════════════════
+    let state = {
+      completed: {}, // key: "M-D" => true/false
+      theme: 'dark'
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state = { ...state, ...parsed };
+        }
+      } catch(e) {}
+    }
+
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+    }
+
+    function isCompleted(monthIdx, day) {
+      return !!state.completed[`${monthIdx}-${day}`];
+    }
+
+    function toggleDay(monthIdx, day) {
+      const key = `${monthIdx}-${day}`;
+      state.completed[key] = !state.completed[key];
+      saveState();
+    }
+
+    // Aggregate stats
+    function calcStats() {
+      let totalSaved = 0, totalDays = 0, totalPossibleDays = 0;
+      let monthData = [];
+
+      for (let m = 0; m < 12; m++) {
+        let mSaved = 0, mDays = 0;
+        const days = daysInMonth(m);
+        totalPossibleDays += days;
+        for (let d = 1; d <= days; d++) {
+          if (isCompleted(m, d)) {
+            const amt = getDailyAmount(m, d);
+            mSaved += amt;
+            mDays++;
+            totalSaved += amt;
+            totalDays++;
+          }
+        }
+        monthData.push({ saved: mSaved, days: mDays, target: getMonthTarget(m), totalDays: days });
+      }
+
+      // Quarterly
+      const quarters = [
+        { months: [0,1,2], saved: 0, target: 0, days: 0, totalDays: 0 },
+        { months: [3,4,5], saved: 0, target: 0, days: 0, totalDays: 0 },
+        { months: [6,7,8], saved: 0, target: 0, days: 0, totalDays: 0 },
+        { months: [9,10,11], saved: 0, target: 0, days: 0, totalDays: 0 },
+      ];
+      quarters.forEach((q, qi) => {
+        q.months.forEach(m => {
+          q.saved += monthData[m].saved;
+          q.target += monthData[m].target;
+          q.days += monthData[m].days;
+          q.totalDays += monthData[m].totalDays;
+        });
+      });
+
+      return {
+        totalSaved, totalDays, totalPossibleDays,
+        yearTarget: getYearTarget(),
+        monthData, quarters
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // FORMAT HELPERS
+    // ═══════════════════════════════════════════════════════════
+    function fmt(n) {
+      return '₹' + n.toLocaleString('en-IN');
+    }
+
+    function pct(a, b) {
+      return b === 0 ? 0 : Math.round((a / b) * 100);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // UI: PAGES
+    // ═══════════════════════════════════════════════════════════
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.remove('active');
+        n.removeAttribute('aria-current');
+      });
+
+      const pageEl = document.getElementById(`page-${name}`);
+      const navEl = document.getElementById(`nav${name.charAt(0).toUpperCase() + name.slice(1)}`);
+
+      if (pageEl) pageEl.classList.add('active');
+      if (navEl) {
+        navEl.classList.add('active');
+        navEl.setAttribute('aria-current', 'page');
+      }
+
+      // Lazy-init charts on stats page
+      if (name === 'stats') initCharts();
+      if (name === 'calendar') renderCalendar();
+      if (name === 'yearly') renderYearly();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // UI: DASHBOARD
+    // ═══════════════════════════════════════════════════════════
+    function updateDashboard() {
+      const s = calcStats();
+
+      // Hero
+      document.getElementById('heroTotalSaved').textContent = fmt(s.totalSaved);
+
+      // Stat cards
+      document.getElementById('statTotalSaved').textContent = fmt(s.totalSaved);
+      document.getElementById('statTotalDays').textContent = `${s.totalDays} days done`;
+
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      document.getElementById('statMonthSaved').textContent = fmt(s.monthData[currentMonth].saved);
+      document.getElementById('statMonthName').textContent = MONTH_SHORT[currentMonth];
+
+      const yearPct = pct(s.totalSaved, s.yearTarget);
+      document.getElementById('statProgress').textContent = yearPct + '%';
+      document.getElementById('statCompletedDays').textContent = `${s.totalDays} / ${s.totalPossibleDays} days`;
+
+      document.getElementById('statYearTarget').textContent = fmt(s.yearTarget);
+
+      // Progress bar
+      document.getElementById('progressBarPct').textContent = yearPct + '%';
+      const pFill = document.getElementById('progressFill');
+      pFill.style.width = yearPct + '%';
+      document.getElementById('progressTrack').setAttribute('aria-valuenow', yearPct);
+      document.getElementById('progressSaved').textContent = fmt(s.totalSaved);
+      document.getElementById('progressRemaining').textContent = fmt(Math.max(0, s.yearTarget - s.totalSaved));
+
+      // Quarterly rings
+      const qIds = ['q1','q2','q3','q4'];
+      const circumference = 2 * Math.PI * 28; // r=28
+      s.quarters.forEach((q, i) => {
+        const p = pct(q.saved, q.target);
+        const offset = circumference - (p / 100) * circumference;
+        const ring = document.getElementById(`${qIds[i]}Ring`);
+        const pctEl = document.getElementById(`${qIds[i]}Pct`);
+        const amtEl = document.getElementById(`${qIds[i]}Amount`);
+        if (ring) {
+          ring.style.strokeDasharray = circumference;
+          ring.style.strokeDashoffset = offset;
+        }
+        if (pctEl) pctEl.textContent = p + '%';
+        if (amtEl) amtEl.textContent = fmt(q.saved);
+      });
+
+      // Streak
+      updateStreak(s);
+    }
+
+    function updateStreak(s) {
+      const today = new Date();
+      const m = today.getMonth();
+      const d = today.getDate();
+      const bannerEl = document.getElementById('streakBanner');
+      const titleEl = document.getElementById('streakTitle');
+      const subEl = document.getElementById('streakSub');
+
+      // Count current streak (backwards from yesterday)
+      let streak = 0;
+      let checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() - 1);
+      while (streak < 365) {
+        const cm = checkDate.getMonth();
+        const cd = checkDate.getDate();
+        if (checkDate.getFullYear() !== YEAR) break;
+        if (isCompleted(cm, cd)) {
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else break;
+      }
+
+      if (isCompleted(m, d)) {
+        titleEl.textContent = `🔥 ${streak + 1} Day Streak!`;
+        subEl.textContent = `Today's ₹${getDailyAmount(m, d).toLocaleString('en-IN')} saved! Amazing!`;
+      } else if (streak > 0) {
+        titleEl.textContent = `${streak} Day Streak – Don't Break It!`;
+        subEl.textContent = `Save ₹${getDailyAmount(m, d).toLocaleString('en-IN')} today to continue your streak`;
+      } else {
+        titleEl.textContent = `Start Your Streak Today! 💪`;
+        subEl.textContent = `Mark today's ₹${getDailyAmount(m, d).toLocaleString('en-IN')} to begin`;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // UI: CALENDAR
+    // ═══════════════════════════════════════════════════════════
+    let currentMonth = new Date().getMonth();
+
+    function buildMonthTabs() {
+      const tabs = document.getElementById('monthTabs');
+      tabs.innerHTML = '';
+      MONTHS.forEach((name, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'month-tab' + (i === currentMonth ? ' active' : '');
+        btn.textContent = MONTH_SHORT[i];
+        btn.setAttribute('role', 'tab');
+        btn.setAttribute('aria-selected', i === currentMonth ? 'true' : 'false');
+        btn.setAttribute('aria-label', name);
+        btn.onclick = () => {
+          currentMonth = i;
+          document.querySelectorAll('.month-tab').forEach((t, ti) => {
+            t.classList.toggle('active', ti === i);
+            t.setAttribute('aria-selected', ti === i ? 'true' : 'false');
+          });
+          renderCalendar();
+        };
+        tabs.appendChild(btn);
+      });
+    }
+
+    function renderCalendar() {
+      buildMonthTabs();
+      const m = currentMonth;
+      const days = daysInMonth(m);
+      const firstDow = new Date(YEAR, m, 1).getDay();
+      const today = new Date();
+      const isCurrentYear = today.getFullYear() === YEAR;
+      const todayM = today.getMonth();
+      const todayD = today.getDate();
+
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
+
+      // Empty cells
+      for (let i = 0; i < firstDow; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-empty';
+        grid.appendChild(empty);
+      }
+
+      // Day cards
+      for (let d = 1; d <= days; d++) {
+        const amt = getDailyAmount(m, d);
+        const isBonus = BONUS_DAYS.includes(d);
+        const comp = isCompleted(m, d);
+        const isToday = isCurrentYear && todayM === m && todayD === d;
+
+        const card = document.createElement('div');
+        card.className = 'day-card' +
+          (comp ? ' completed' : '') +
+          (isBonus ? ' bonus' : '') +
+          (isToday ? ' today' : '');
+        card.setAttribute('role', 'gridcell');
+        card.setAttribute('aria-label', `${MONTHS[m]} ${d}, ${fmt(amt)}${comp ? ', completed' : ''}${isBonus ? ', bonus day' : ''}`);
+        card.setAttribute('tabindex', '0');
+
+        // Day number
+        const numEl = document.createElement('div');
+        numEl.className = 'day-num';
+        numEl.textContent = d;
+        card.appendChild(numEl);
+
+        // Amount
+        const amtEl = document.createElement('div');
+        amtEl.className = 'day-amount' + (isBonus ? ' bonus-amt' : '');
+        amtEl.textContent = fmt(amt);
+        card.appendChild(amtEl);
+
+        // Tick
+        if (comp) {
+          const tick = document.createElement('div');
+          tick.className = 'day-tick';
+          tick.innerHTML = '✓';
+          tick.setAttribute('aria-hidden', 'true');
+          card.appendChild(tick);
+        }
+
+        // Bonus badge
+        if (isBonus) {
+          const badge = document.createElement('div');
+          badge.className = 'bonus-badge';
+          badge.textContent = '🔥 3×';
+          badge.setAttribute('aria-hidden', 'true');
+          card.appendChild(badge);
+        }
+
+        // Click / keyboard
+        const clickHandler = () => {
+          toggleDay(m, d);
+          renderCalendar();
+          updateDashboard();
+          const nowComp = isCompleted(m, d);
+          showToast(nowComp ? `✅ Day ${d} saved! ${fmt(getDailyAmount(m, d))}` : `↩️ Day ${d} unmarked`);
+        };
+        card.onclick = clickHandler;
+        card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clickHandler(); } };
+
+        grid.appendChild(card);
+      }
+
+      // Month Info Bar
+      updateMonthInfo(m);
+    }
+
+    function updateMonthInfo(m) {
+      const days = daysInMonth(m);
+      const s = calcStats();
+      const mData = s.monthData[m];
+      const remaining = days - mData.days;
+      const pctDone = pct(mData.saved, mData.target);
+
+      const bar = document.getElementById('monthInfoBar');
+      bar.innerHTML = `
+        <div class="month-info-pill"><span class="dot" aria-hidden="true"></span><strong>${mData.days}</strong>&nbsp;done</div>
+        <div class="month-info-pill"><span class="dot muted" aria-hidden="true"></span><strong>${remaining}</strong>&nbsp;left</div>
+        <div class="month-info-pill"><span class="dot gold" aria-hidden="true"></span><strong>${fmt(mData.saved)}</strong>&nbsp;saved</div>
+        <div class="month-info-pill"><strong>${pctDone}%</strong>&nbsp;complete</div>
+      `;
+
+      // Month progress bar
+      document.getElementById('monthProgressTitle').textContent = `${MONTHS[m]} Progress`;
+      document.getElementById('monthProgressPct').textContent = pctDone + '%';
+      document.getElementById('monthProgressFill').style.width = pctDone + '%';
+      document.getElementById('monthProgressSaved').textContent = fmt(mData.saved);
+      document.getElementById('monthProgressTarget').textContent = fmt(mData.target);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // UI: CHARTS
+    // ═══════════════════════════════════════════════════════════
+    let chartsInited = false;
+    let chartInstances = {};
+
+    function getChartColors() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      return {
+        grid: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+        text: isDark ? '#64748b' : '#94a3b8',
+        accent: '#10b981',
+        gold: '#f59e0b',
+        purple: '#6366f1',
+        blue: '#3b82f6',
+        accentAlpha: 'rgba(16,185,129,0.15)',
+        goldAlpha: 'rgba(245,158,11,0.15)',
+      };
+    }
+
+    function initCharts() {
+      const s = calcStats();
+      const cc = getChartColors();
+
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.color = cc.text;
+
+      const destroyChart = (id) => { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } };
+
+      // Monthly Bar Chart
+      destroyChart('monthly');
+      const monthCtx = document.getElementById('monthlyChart').getContext('2d');
+      chartInstances['monthly'] = new Chart(monthCtx, {
+        type: 'bar',
+        data: {
+          labels: MONTH_SHORT,
+          datasets: [{
+            label: 'Saved (₹)',
+            data: s.monthData.map(m => m.saved),
+            backgroundColor: s.monthData.map(m =>
+              m.saved > 0 ? cc.accent : (document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
+            ),
+            borderRadius: 8,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: cc.grid }, ticks: { color: cc.text } },
+            y: {
+              grid: { color: cc.grid }, ticks: { color: cc.text, callback: v => '₹' + (v/1000).toFixed(0) + 'k' }
+            }
+          }
+        }
+      });
+
+      // Quarterly Doughnut
+      destroyChart('quarterly');
+      const qCtx = document.getElementById('quarterlyChart').getContext('2d');
+      chartInstances['quarterly'] = new Chart(qCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'],
+          datasets: [{
+            data: s.quarters.map(q => q.saved || 0.01), // avoid all-zero
+            backgroundColor: [cc.accent, cc.gold, cc.purple, cc.blue],
+            borderWidth: 0,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { color: cc.text, padding: 16, font: { size: 12 } } }
+          }
+        }
+      });
+
+      // Annual Cumulative Line
+      destroyChart('annual');
+      const annualCtx = document.getElementById('annualChart').getContext('2d');
+      let cumulative = 0;
+      const cumulativeData = s.monthData.map(m => { cumulative += m.saved; return cumulative; });
+      chartInstances['annual'] = new Chart(annualCtx, {
+        type: 'line',
+        data: {
+          labels: MONTH_SHORT,
+          datasets: [{
+            label: 'Cumulative (₹)',
+            data: cumulativeData,
+            borderColor: cc.accent,
+            backgroundColor: cc.accentAlpha,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: cc.accent,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: cc.grid }, ticks: { color: cc.text } },
+            y: {
+              grid: { color: cc.grid }, ticks: { color: cc.text, callback: v => '₹' + (v/1000).toFixed(0) + 'k' }
+            }
+          }
+        }
+      });
+
+      // Completion Rate Donut
+      destroyChart('completion');
+      const compCtx = document.getElementById('completionChart').getContext('2d');
+      const completedDays = s.totalDays;
+      const remainingDays = s.totalPossibleDays - completedDays;
+      chartInstances['completion'] = new Chart(compCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Completed', 'Remaining'],
+          datasets: [{
+            data: [completedDays || 0.01, remainingDays],
+            backgroundColor: [cc.accent, document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'],
+            borderWidth: 0,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          cutout: '70%',
+          plugins: {
+            legend: { position: 'bottom', labels: { color: cc.text, padding: 16 } }
+          }
+        }
+      });
+
+      // Update chart total label
+      document.getElementById('chartMonthTotal').textContent = fmt(s.totalSaved);
+
+      chartsInited = true;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // UI: YEARLY
+    // ═══════════════════════════════════════════════════════════
+    function renderYearly() {
+      const s = calcStats();
+      const maxSaved = Math.max(...s.monthData.map(m => m.saved), 1);
+
+      document.getElementById('yearEndAmount').textContent = fmt(s.yearTarget);
+      const savedPct = pct(s.totalSaved, s.yearTarget);
+      document.getElementById('yearEndSub').textContent =
+        s.totalSaved > 0
+          ? `You've saved ${fmt(s.totalSaved)} (${savedPct}% of your goal)`
+          : 'Complete all 365 days to reach your goal';
+
+      const grid = document.getElementById('yearGrid');
+      grid.innerHTML = '';
+
+      s.monthData.forEach((mData, i) => {
+        const pctFill = mData.target > 0 ? pct(mData.saved, mData.target) : 0;
+        const barWidth = mData.saved > 0 ? pct(mData.saved, maxSaved) : 0;
+        const card = document.createElement('div');
+        card.className = 'year-month-card' + (mData.saved > 0 ? ' has-savings' : '');
+        card.setAttribute('role', 'listitem');
+        card.setAttribute('aria-label', `${MONTHS[i]}: ${fmt(mData.saved)} saved, ${mData.days} of ${mData.totalDays} days`);
+        card.innerHTML = `
+          <div class="year-month-name">${MONTH_SHORT[i]}</div>
+          <div class="year-month-amount">${mData.saved > 0 ? fmt(mData.saved) : '—'}</div>
+          <div class="year-month-bar"><div class="year-month-fill" style="width:${barWidth}%"></div></div>
+          <div class="year-month-days">${mData.days}/${mData.totalDays} days · ${pctFill}%</div>
+        `;
+        card.onclick = () => { currentMonth = i; showPage('calendar'); };
+        grid.appendChild(card);
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // THEME
+    // ═══════════════════════════════════════════════════════════
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      state.theme = theme;
+      const icon = document.getElementById('themeIcon');
+      const toggle = document.getElementById('darkModeToggle');
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+      if (toggle) toggle.classList.toggle('on', theme === 'dark');
+      if (metaTheme) metaTheme.content = theme === 'dark' ? '#10b981' : '#059669';
+      saveState();
+      // Re-init charts if visible
+      if (document.getElementById('page-stats').classList.contains('active')) {
+        setTimeout(initCharts, 100);
+      }
+    }
+
+    function toggleTheme() {
+      applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+    }
+
+    document.getElementById('themeToggleBtn').onclick = toggleTheme;
+
+    // ═══════════════════════════════════════════════════════════
+    // TOAST
+    // ═══════════════════════════════════════════════════════════
+    function showToast(msg) {
+      const wrap = document.getElementById('toastWrap');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      wrap.appendChild(toast);
+      setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // EXPORT PDF
+    // ═══════════════════════════════════════════════════════════
+    function exportPDF() {
+      if (!window.jspdf) { showToast('⏳ PDF library loading…'); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const s = calcStats();
+
+      // Header
+      doc.setFillColor(16, 185, 129);
+      doc.rect(0, 0, 210, 40, 'F');
+      doc.setFontSize(22);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Money Tick Challenge', 14, 18);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Annual Savings Report — ${YEAR}`, 14, 26);
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, 14, 33);
+
+      // Summary
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Year Summary', 14, 54);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      const summaryData = [
+        ['Total Saved', fmt(s.totalSaved)],
+        ['Year Target', fmt(s.yearTarget)],
+        ['Progress', pct(s.totalSaved, s.yearTarget) + '%'],
+        ['Days Completed', `${s.totalDays} of ${s.totalPossibleDays}`],
+        ['Q1 Savings', fmt(s.quarters[0].saved)],
+        ['Q2 Savings', fmt(s.quarters[1].saved)],
+        ['Q3 Savings', fmt(s.quarters[2].saved)],
+        ['Q4 Savings', fmt(s.quarters[3].saved)],
+      ];
+      summaryData.forEach(([label, value], i) => {
+        const y = 64 + i * 9;
+        doc.setTextColor(100, 100, 100);
+        doc.text(label, 14, y);
+        doc.setTextColor(16, 185, 129);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, 80, y);
+        doc.setFont('helvetica', 'normal');
+      });
+
+      // Monthly Table
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Monthly Breakdown', 14, 147);
+
+      const headers = ['Month', 'Days Done', 'Total Days', 'Saved', 'Target', '%'];
+      const colX = [14, 52, 80, 108, 145, 180];
+      doc.setFontSize(9);
+      doc.setFillColor(236, 253, 245);
+      doc.rect(10, 151, 190, 8, 'F');
+      doc.setTextColor(5, 150, 105);
+      headers.forEach((h, i) => doc.text(h, colX[i], 157));
+
+      s.monthData.forEach((mData, mi) => {
+        const y = 163 + mi * 9;
+        if (mi % 2 === 0) {
+          doc.setFillColor(248, 255, 254);
+          doc.rect(10, y - 5, 190, 8, 'F');
+        }
+        doc.setTextColor(50, 50, 50);
+        doc.setFont('helvetica', 'normal');
+        const p = pct(mData.saved, mData.target);
+        const row = [MONTH_SHORT[mi], mData.days, mData.totalDays, fmt(mData.saved), fmt(mData.target), p + '%'];
+        row.forEach((v, i) => doc.text(String(v), colX[i], y));
+      });
+
+      doc.save(`MoneyTick_Report_${YEAR}.pdf`);
+      showToast('📄 PDF report downloaded!');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // EXPORT EXCEL
+    // ═══════════════════════════════════════════════════════════
+    function exportExcel() {
+      if (!window.XLSX) { showToast('⏳ Excel library loading…'); return; }
+      const s = calcStats();
+      const wb = XLSX.utils.book_new();
+
+      // Summary sheet
+      const summaryData = [
+        ['Money Tick Challenge — Annual Report', YEAR],
+        [],
+        ['SUMMARY'],
+        ['Total Saved', s.totalSaved],
+        ['Year Target', s.yearTarget],
+        ['Progress %', pct(s.totalSaved, s.yearTarget)],
+        ['Days Completed', s.totalDays],
+        ['Total Possible Days', s.totalPossibleDays],
+        [],
+        ['QUARTERLY'],
+        ['Q1 (Jan-Mar)', s.quarters[0].saved],
+        ['Q2 (Apr-Jun)', s.quarters[1].saved],
+        ['Q3 (Jul-Sep)', s.quarters[2].saved],
+        ['Q4 (Oct-Dec)', s.quarters[3].saved],
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+      // Monthly sheet
+      const monthHeaders = ['Month', 'Days Completed', 'Total Days', 'Amount Saved', 'Month Target', 'Progress %'];
+      const monthRows = [monthHeaders];
+      s.monthData.forEach((mData, i) => {
+        monthRows.push([MONTHS[i], mData.days, mData.totalDays, mData.saved, mData.target, pct(mData.saved, mData.target)]);
+      });
+      const wsMonthly = XLSX.utils.aoa_to_sheet(monthRows);
+      XLSX.utils.book_append_sheet(wb, wsMonthly, 'Monthly');
+
+      // Daily sheet
+      const dailyHeaders = ['Month', 'Day', 'Amount (₹)', 'Bonus Day', 'Completed'];
+      const dailyRows = [dailyHeaders];
+      for (let m = 0; m < 12; m++) {
+        const days = daysInMonth(m);
+        for (let d = 1; d <= days; d++) {
+          dailyRows.push([MONTHS[m], d, getDailyAmount(m, d), BONUS_DAYS.includes(d) ? 'Yes' : 'No', isCompleted(m, d) ? 'Yes' : 'No']);
+        }
+      }
+      const wsDaily = XLSX.utils.aoa_to_sheet(dailyRows);
+      XLSX.utils.book_append_sheet(wb, wsDaily, 'Daily Details');
+
+      XLSX.writeFile(wb, `MoneyTick_Data_${YEAR}.xlsx`);
+      showToast('📊 Excel file downloaded!');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // RESET
+    // ═══════════════════════════════════════════════════════════
+    function resetAllData() {
+      if (!confirm('Are you sure? This will erase ALL your saved progress. This cannot be undone.')) return;
+      state.completed = {};
+      saveState();
+      updateDashboard();
+      renderCalendar();
+      renderYearly();
+      if (document.getElementById('page-stats').classList.contains('active')) initCharts();
+      showToast('🗑️ All data cleared');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PWA INSTALL
+    // ═══════════════════════════════════════════════════════════
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      document.getElementById('installBtn').classList.remove('hidden');
+    });
+
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('installBtn').classList.add('hidden');
+        showToast('✅ App installed successfully!');
+      }
+      deferredInstallPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('installBtn').classList.add('hidden');
+      showToast('🎉 App installed!');
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    // SERVICE WORKER
+    // ═══════════════════════════════════════════════════════════
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════
+    function init() {
+      loadState();
+      applyTheme(state.theme || 'dark');
+
+      // Auto-navigate to today's month on calendar page
+      currentMonth = new Date().getMonth();
+
+      updateDashboard();
+      renderCalendar();
+      renderYearly();
+
+      // Show dashboard by default
+      showPage('dashboard');
+    }
+
+    // Run
+    init();
+  </script>
+</body>
+</html>
