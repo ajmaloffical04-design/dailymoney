@@ -487,6 +487,14 @@
         <div id="quarterlyBarsContainer"></div>
       </div>
 
+      <!-- Monthly Breakdown Card -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Monthly Progress</div>
+        </div>
+        <div id="monthlyBarsContainer"></div>
+      </div>
+
       <!-- 10-Year Projection Card -->
       <div class="chart-card">
         <div class="chart-header">
@@ -1561,6 +1569,7 @@
 
       updateDashboard();
       renderQuarterlyUI(); // New
+      renderMonthlyUI(); // New
       renderProjectionChart(); // New
       
       renderCalendar();
@@ -1632,6 +1641,29 @@ END:VCALENDAR`;
     }
 
     let projChartInstance = null;
+        function renderMonthlyUI() {
+      const s = calcStats();
+      const container = document.getElementById('monthlyBarsContainer');
+      if(!container) return;
+      
+      let html = '';
+      s.monthData.forEach((m, i) => {
+        const p = pct(m.saved, m.target);
+        html += `
+          <div class="q-bar-row">
+            <div class="q-bar-header">
+              <span>${MONTH_SHORT[i]} Progress</span>
+              <span class="q-val">${fmt(m.saved)} <span style="font-size:0.65rem;font-weight:500;">/ ${fmt(m.target)}</span></span>
+            </div>
+            <div class="q-bar-bg">
+              <div class="q-bar-fill" style="width: ${p}%"></div>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
     function renderProjectionChart() {
       const ctx = document.getElementById('projectionChart');
       if (!ctx) return;
@@ -1699,6 +1731,7 @@ END:VCALENDAR`;
     toggleDay = function(monthIdx, day) {
       oldToggleDay(monthIdx, day);
       renderQuarterlyUI(); // Live update
+      renderMonthlyUI(); // Live update
     };
 
   </script>
