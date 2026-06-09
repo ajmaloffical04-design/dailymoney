@@ -495,10 +495,10 @@
         <div id="monthlyBarsContainer"></div>
       </div>
 
-      <!-- 10-Year Projection Card -->
+      <!-- 3-Year Projection Card -->
       <div class="chart-card">
         <div class="chart-header">
-          <div class="chart-title">10-Year Wealth Projection</div>
+          <div class="chart-title">3-Year Wealth Projection</div>
           <div class="stat-badge badge-green" style="font-size:0.75rem;" id="tenYearTotal">Compounding</div>
         </div>
         <div class="chart-container">
@@ -521,10 +521,23 @@
         <canvas id="quarterlyChart"></canvas>
         <canvas id="annualChart"></canvas>
         <canvas id="completionChart"></canvas>
-        <div id="yearEndAmount"></div>
-        <div id="yearEndSub"></div>
-        <div id="yearGrid"></div>
       </div>
+    </section>
+
+    <!-- ── YEARLY ── -->
+    <section class="page" id="page-yearly">
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">Yearly Summary</h1>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Year End Projection</div>
+        </div>
+        <div class="stat-value" id="yearEndAmount">₹0</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; font-weight: 500;" id="yearEndSub"></div>
+      </div>
+      <div class="section-header">Monthly Breakdown</div>
+      <div id="yearGrid" style="display: grid; grid-template-columns: 1fr; gap: 10px;"></div>
     </section>
 
     <!-- ── CALENDAR ── -->
@@ -554,6 +567,24 @@
     <section class="page" id="page-stats">
       <div class="dashboard-header"><h1 class="dashboard-title">Full Analytics</h1></div>
       <div class="chart-card"><canvas id="monthlyChart2"></canvas></div>
+    </section>
+
+    <!-- ── DAILY ── -->
+    <section class="page" id="page-daily">
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">Daily Updates</h1>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Today's Savings</div>
+          <div class="stat-badge badge-green" id="dailyTodayStatus">Pending</div>
+        </div>
+        <div class="stat-value" id="dailyTodayAmount" style="text-align: center; font-size: 3rem; margin: 20px 0;">₹0</div>
+        <div style="text-align: center; color: var(--text-muted); font-weight: 600;" id="dailyTodayDate">Jan 1, 2026</div>
+      </div>
+      
+      <div class="section-header">Upcoming</div>
+      <div id="dailyUpcomingList" style="display: flex; flex-direction: column; gap: 10px;"></div>
     </section>
 
     <!-- ── SETTINGS ── -->
@@ -599,6 +630,10 @@
       <button class="nav-item" id="navYearly" onclick="showPage('yearly')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 13 17 7"/></svg>
         <span class="nav-text">YEARLY</span>
+      </button>
+      <button class="nav-item" id="navDaily" onclick="showPage('daily')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <span class="nav-text">DAILY</span>
       </button>
       <button class="nav-item" id="navSettings" onclick="showPage('settings')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -928,10 +963,11 @@
         navEl.setAttribute('aria-current', 'page');
       }
 
-      // Lazy-init charts on stats page
       if (name === 'stats') initCharts();
+      if (name === 'dashboard') renderProjectionChart();
       if (name === 'calendar') renderCalendar();
       if (name === 'yearly') renderYearly();
+      if (name === 'daily') renderDaily();
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -1346,6 +1382,60 @@
     }
 
     // ═══════════════════════════════════════════════════════════
+    // UI: DAILY
+    // ═══════════════════════════════════════════════════════════
+    function renderDaily() {
+      const today = new Date();
+      const m = today.getMonth();
+      const d = today.getDate();
+      
+      const amt = getDailyAmount(m, d);
+      document.getElementById('dailyTodayAmount').textContent = fmt(amt);
+      document.getElementById('dailyTodayDate').textContent = `${MONTH_SHORT[m]} ${d}, ${YEAR}`;
+      
+      const isDone = isCompleted(m, d);
+      const badge = document.getElementById('dailyTodayStatus');
+      if (isDone) {
+        badge.className = 'stat-badge badge-green';
+        badge.textContent = 'Completed';
+      } else {
+        badge.className = 'stat-badge badge-red';
+        badge.textContent = 'Pending';
+      }
+      
+      const list = document.getElementById('dailyUpcomingList');
+      list.innerHTML = '';
+      
+      let cm = m, cd = d + 1;
+      for (let i = 0; i < 7; i++) {
+        const dInM = daysInMonth(cm);
+        if (cd > dInM) {
+          cm++; cd = 1;
+          if (cm > 11) break;
+        }
+        
+        const cAmt = getDailyAmount(cm, cd);
+        const cDone = isCompleted(cm, cd);
+        
+        const card = document.createElement('div');
+        card.className = 'chart-card';
+        card.style.marginBottom = '0';
+        card.style.padding = '12px 20px';
+        card.style.display = 'flex';
+        card.style.justifyContent = 'space-between';
+        card.style.alignItems = 'center';
+        card.innerHTML = `
+          <div style="font-weight: 600; color: var(--text-main); font-size: 0.85rem;">${MONTH_SHORT[cm]} ${cd}</div>
+          <div style="font-weight: 700; color: ${cDone ? 'var(--badge-green-fg)' : 'var(--text-main)'}; font-size: 1rem;">
+            ${fmt(cAmt)} ${cDone ? ' <span style="font-size:0.75rem;">✓</span>' : ''}
+          </div>
+        `;
+        list.appendChild(card);
+        cd++;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
     // THEME
     // ═══════════════════════════════════════════════════════════
     function applyTheme(theme) {
@@ -1577,7 +1667,6 @@
       updateDashboard();
       renderQuarterlyUI(); // New
       renderMonthlyUI(); // New
-      renderProjectionChart(); // New
       
       renderCalendar();
       renderYearly();
@@ -1682,14 +1771,14 @@ END:VCALENDAR`;
       const data = [];
       let cumulative = 0;
       
-      // 10 years projection starting from current YEAR
-      for(let i=0; i<10; i++) {
+      // 3 years projection starting from current YEAR
+      for(let i=0; i<3; i++) {
         labels.push(YEAR + i);
         cumulative += annualTarget;
         data.push(cumulative);
       }
       
-      document.getElementById('tenYearTotal').textContent = `10 Yr Total: ${fmt(cumulative)}`;
+      document.getElementById('tenYearTotal').textContent = `3 Yr Total: ${fmt(cumulative)}`;
 
       if (projChartInstance) {
         projChartInstance.destroy();
